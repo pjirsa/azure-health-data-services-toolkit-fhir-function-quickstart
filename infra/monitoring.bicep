@@ -25,21 +25,13 @@ resource logAnalyticsWorkspaceDiagnostics 'Microsoft.Insights/diagnosticSettings
     logs: [
       {
         category: 'Audit'
-        enabled: true
-        retentionPolicy: {
-          days: 7
-          enabled: true
-        }
+        enabled: true        
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
-        enabled: true
-        retentionPolicy: {
-          days: 7
-          enabled: true
-        }
+        enabled: true        
       }
     ]
   }
