@@ -165,3 +165,7 @@ content-type: application/json
     "reference": "Organization/1"
   }
 }
+
+###
+
+GET http://localhost:7256/Patient/eee45055-2dae-4461-860f-67e6e5f62aea
