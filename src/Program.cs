@@ -1,5 +1,6 @@
 using System.Reflection;
 using Azure.Identity;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.AzureHealth.DataServices.Bindings;
 using Microsoft.AzureHealth.DataServices.Clients.Headers;
 using Microsoft.AzureHealth.DataServices.Configuration;
@@ -15,27 +16,14 @@ internal static class Program
 {
     private static async Task Main(string[] args)
     {
-        MyServiceConfig config = new();
-
-        using IHost host = new HostBuilder()
-            .ConfigureAppConfiguration((hostingContext, configuration) =>
+        MyServiceConfig config = new();               
+        
+        var host = new HostBuilder()
+            .ConfigureFunctionsWebApplication()            
+            .ConfigureServices((context, services) =>
             {
-                configuration.Sources.Clear();
+                context.Configuration.Bind(config);
 
-                IHostEnvironment env = hostingContext.HostingEnvironment;
-
-                configuration
-                    .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
-                    .AddUserSecrets(Assembly.GetExecutingAssembly(), true)
-                    .AddEnvironmentVariables("AZURE_");
-
-                IConfigurationRoot configurationRoot = configuration.Build();
-
-                configurationRoot.Bind(config);
-            })
-            .ConfigureFunctionsWorkerDefaults()
-            .ConfigureServices(services =>
-            {
                 if (config.InstrumentationKey != null)
                 {
                     services.UseAppInsightsLogging(config.InstrumentationKey, LogLevel.Information);
@@ -47,7 +35,7 @@ internal static class Program
                 services.AddCustomHeader("X-MS-AZUREFHIR-AUDIT-USER-TOKEN-TEST", "QuickstartCustomOperation", CustomHeaderType.RequestStatic);
 
                 // Setup pipeline for Azure function
-                services.UseAzureFunctionPipeline();
+                services.UseWebPipeline();
 
                 // Add our header modification as the first filter
                 services.AddInputFilter(typeof(QuickstartFilter));
@@ -56,7 +44,7 @@ internal static class Program
                 services.AddBinding<RestBinding, RestBindingOptions>(options =>
                 {
                     options.BaseAddress = config.FhirServerUrl;
-                    options.Credential = new DefaultAzureCredential();
+                    options.Credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions { TenantId = config.TenantId });
                 });
             })
             .Build();
